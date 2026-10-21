@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Salone Biznes sie — Idle Tycoon</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --surface: #fff;
+      --surface-soft: #f8fafc;
+      --text: #172333;
+      --muted: #768496;
+      --line: #e7edf3;
+      --primary: #167d68;
+      --primary-dark: #116754;
+      --primary-soft: #e5f5ef;
+      --gold: #f2b84b;
+      --red: #d85c65;
+      --shadow: 0 4px 20px rgba(20, 40, 60, .055);
+      --radius: 18px;
+      --nav-height: 76px;
+    }
+    for (const business of this.game.state.businesses) {
+      business.incomeHistory.push(business.hourly * business.level * (business.manager ? 1.25 : 1));
+      if (business.incomeHistory.length > 28) business.incomeHistory.shift();
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #111a23;
+      --surface: #1b2733;
+      --surface-soft: #24313e;
+      --text: #edf4fa;
+      --muted: #9babb9;
+      --line: #30404e;
+      --primary: #4fc2a2;
+      --primary-dark: #32a887;
+      --primary-soft: #213d39;
+      --gold: #f1c46e;
+      --red: #f0848c;
+      --shadow: 0 5px 22px rgba(0, 0, 0, .2);
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { color: inherit; font: inherit; }
+    [hidden] { display: none !important; }
+    button:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary), transparent 55%); outline-offset: 2px; }
+    .app-shell { width: min(100%, 760px); min-height: 100vh; margin: 0 auto; padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 20px); }
+    .topbar {
+      position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; min-height: 68px; padding: 12px 18px; background: color-mix(in srgb, var(--bg), transparent 5%);
+      border-bottom: 1px solid color-mix(in srgb, var(--line), transparent 30%); backdrop-filter: blur(18px);
+    }
+    .brand-lockup { min-width: 0; }
+    .eyebrow { margin: 0 0 2px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .screen-title { overflow: hidden; margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-badge {
+      display: flex; flex: 0 0 auto; align-items: center; gap: 7px; max-width: 185px; padding: 8px 11px;
+      border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow);
+      color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 700; transition: transform .16s ease;
+    }
+    .profile-badge:active, .btn:active, .nav-item:active, .segment:active { transform: scale(.97); }
+    .connection-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #aab5c1; }
+    .connection-dot.connected { background: #31b889; box-shadow: 0 0 0 4px rgba(49, 184, 137, .13); animation: pulse 2.4s infinite; }
+    .profile-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .net-worth-bar {
+      position: sticky; top: 68px; z-index: 19; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 9px 18px; background: var(--surface); border-bottom: 1px solid var(--line);
+    }
+    .net-worth-label { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .net-worth-value { font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -.025em; }
+    .save-status { color: var(--muted); font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .save-status.saving { color: #d79b24; }
+    .save-status.synced { color: var(--primary); }
+    main { padding: 16px 16px 24px; }
+    .tab-content { display: none; animation: fade-in .2s ease both; }
+    .tab-content.active { display: block; }
+    .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 20px 2px 11px; }
+    .section-head h2, .section-head h3 { margin: 0; font-size: 16px; letter-spacing: -.025em; }
+    .section-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .card, .stat-box {
+      margin-bottom: 12px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--surface); box-shadow: var(--shadow);
+    }
+    .hero {
+      position: relative; overflow: hidden; margin-bottom: 13px; padding: 21px; border-radius: 22px;
+      background: radial-gradient(circle at 90% 10%, rgba(131, 213, 178, .35), transparent 34%), linear-gradient(135deg, #164f4b, #17353d 75%);
+      color: #fff; box-shadow: 0 12px 28px rgba(21, 75, 71, .16);
+    }
+    .hero:after { position: absolute; right: -35px; bottom: -85px; width: 190px; height: 190px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; content: ""; }
+    .hero-label { color: rgba(255,255,255,.72); font-size: 12px; font-weight: 650; }
+    .hero-amount { margin: 5px 0 3px; font-size: clamp(27px, 8vw, 36px); font-weight: 850; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+    .hero-sub { color: rgba(255,255,255,.76); font-size: 12px; }
+    .hero-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .stat-box { margin: 0; padding: 13px 14px; box-shadow: none; }
+    .stat-title { color: var(--muted); font-size: 11px; font-weight: 650; }
+    .stat-value { margin-top: 4px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-detail { margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .btn {
+      display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 7px; padding: 10px 15px;
+      border: 0; border-radius: 999px; background: var(--primary); color: #fff; cursor: pointer; font-size: 12px;
+      font-weight: 750; transition: transform .15s ease, background .15s ease, opacity .15s ease;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { cursor: not-allowed; opacity: .45; }
+    .btn-secondary { border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); }
+    .btn-secondary:hover { background: var(--line); }
+    .btn-ghost { border: 1px solid rgba(255,255,255,.23); background: rgba(255,255,255,.1); color: #fff; }
+    .btn-ghost:hover { background: rgba(255,255,255,.19); }
+    .btn-small { min-height: 36px; padding: 8px 12px; font-size: 11px; }
+    .btn-block { width: 100%; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 10px; font-weight: 800; }
+    .segmented { display: flex; gap: 4px; overflow: auto; margin: 3px 0 15px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-soft); scrollbar-width: none; }
+    .segment { flex: 1 0 auto; min-height: 34px; padding: 7px 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 750; transition: .16s ease; }
+    .segment.active { background: var(--surface); color: var(--text); box-shadow: 0 2px 9px rgba(20,40,60,.09); }
+    .list { display: grid; gap: 10px; }
+    .asset-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 14px; }
+    .asset-main { display: flex; min-width: 0; align-items: center; gap: 11px; }
+    .asset-icon { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border-radius: 14px; background: var(--primary-soft); font-size: 20px; }
+    .asset-info { min-width: 0; }
+    .asset-name { overflow: hidden; margin: 0; font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .asset-meta { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .asset-income { margin-top: 4px; color: var(--primary); font-size: 10px; font-weight: 750; }
+    .asset-side { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .asset-price { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .change-up, .change-down { font-size: 10px; font-weight: 800; }
+    .change-up { color: var(--primary); }
+    .change-down { color: var(--red); }
+    .sparkline { display: block; width: 90px; height: 28px; }
+    .empty-state { padding: 22px 16px; color: var(--muted); text-align: center; font-size: 12px; }
+    .tap-zone { position: relative; display: grid; min-height: 190px; place-items: center; margin: 4px 0 13px; overflow: hidden; border: 1px dashed color-mix(in srgb, var(--primary), transparent 55%); border-radius: 22px; background: linear-gradient(135deg, var(--primary-soft), var(--surface)); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .tap-content { text-align: center; pointer-events: none; }
+    .tap-icon { display: block; font-size: 48px; filter: drop-shadow(0 5px 5px rgba(0,0,0,.09)); transition: transform .15s ease; }
+    .tap-zone:active .tap-icon { transform: scale(.88) rotate(-8deg); }
+    .tap-copy { margin-top: 8px; font-size: 12px; font-weight: 750; }
+    .tap-hint { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .float-number { position: absolute; z-index: 3; color: var(--primary); font-size: 16px; font-weight: 850; pointer-events: none; animation: float-up .95s ease-out forwards; white-space: nowrap; }
+    .progress-track { display: flex; height: 13px; overflow: hidden; border-radius: 999px; background: var(--surface-soft); }
+    .progress-segment { min-width: 2px; transition: width .45s ease; }
+    .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+    .legend-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+    .manager-line, .setting-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .manager-line + .manager-line, .setting-line + .setting-line { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); }
+    .muted { color: var(--muted); }
+    .small { font-size: 11px; }
+    .chart-wrap { height: 120px; }
+    .chart-wrap canvas { width: 100%; height: 100%; }
+    .bottom-nav {
+      position: fixed; right: 0; bottom: 0; left: 0; z-index: 30; display: flex; justify-content: center;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface), transparent 5%); backdrop-filter: blur(18px);
+    }
+    .nav-inner { display: flex; width: min(100%, 760px); justify-content: space-around; }
+    .nav-item { position: relative; display: flex; min-width: 56px; flex-direction: column; align-items: center; gap: 2px; padding: 3px 7px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); cursor: pointer; font-size: 9px; font-weight: 700; transition: .16s ease; }
+    .nav-item.active { color: var(--primary); }
+    .nav-icon { font-size: 20px; line-height: 1.15; }
+    .nav-item.active .nav-icon { transform: translateY(-1px); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: none; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(7, 20, 28, .48); backdrop-filter: blur(4px); }
+    .modal-backdrop.open { display: flex; animation: fade-in .18s ease both; }
+    .modal-sheet { width: min(100%, 500px); max-height: min(84vh, 720px); overflow: auto; padding: 21px; border: 1px solid var(--line); border-radius: 23px; background: var(--surface); box-shadow: 0 20px 70px rgba(0,0,0,.22); animation: slide-up .24s ease both; }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .modal-head h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .modal-close { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; background: var(--surface-soft); cursor: pointer; }
+    .modal-copy { margin: 0 0 16px; color: var(--muted); font-size: 12px; }
+    .provider-list, .reward-list { display: grid; gap: 9px; }
+    .provider-button, .reward-option { display: flex; width: 100%; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-soft); cursor: pointer; text-align: left; transition: transform .15s ease, border .15s ease; }
+    .provider-button:active, .reward-option:active { transform: scale(.985); }
+    .provider-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: var(--surface); font-size: 19px; }
+    .provider-button strong, .reward-option strong { display: block; font-size: 12px; }
+    .provider-button small, .reward-option small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .reward-option { justify-content: space-between; }
+    .reward-info { min-width: 0; }
+    .reward-countdown { margin: 13px 0; padding: 13px; border-radius: 14px; background: var(--primary-soft); color: var(--primary); text-align: center; font-size: 13px; font-weight: 850; }
+    .toast-region { position: fixed; top: 95px; left: 50%; z-index: 80; display: grid; width: min(calc(100% - 32px), 430px); gap: 8px; transform: translateX(-50%); pointer-events: none; }
+    .toast { padding: 11px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); font-size: 12px; font-weight: 700; animation: fade-in .18s ease both; }
+    .toast.error { border-color: color-mix(in srgb, var(--red), var(--line) 55%); color: var(--red); }
+    .toggle { position: relative; width: 42px; height: 24px; border: 0; border-radius: 99px; background: #aab5c1; cursor: pointer; transition: .2s ease; }
+    .toggle:after { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; content: ""; transition: .2s ease; }
+    .toggle.on { background: var(--primary); }
+    .toggle.on:after { transform: translateX(18px); }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slide-up { from { transform: translateY(18px); opacity: .7; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes float-up { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.9); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -74px) scale(1.04); } }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(49,184,137,.06); } }
+    @media (min-width: 700px) {
+      main { padding: 22px 24px 28px; }
+      .topbar, .net-worth-bar { padding-right: 24px; padding-left: 24px; }
+      .modal-backdrop { align-items: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <p class="eyebrow">SALONE TYCOON</p>
+        <h1 class="screen-title" id="screen-title">Earnings</h1>
+      </div>
+      <button class="profile-badge" id="profile-badge" type="button" aria-label="Open cloud account settings">
+        <span class="connection-dot" id="connection-dot"></span>
+        <span class="profile-label" id="profile-label">👤 Local save</span>
+      </button>
+    </header>
+    <div class="net-worth-bar" aria-live="polite">
+      <div><div class="net-worth-label">TOTAL NET WORTH</div><div class="net-worth-value" id="sticky-net-worth">Le 250,000</div></div>
+      <div class="save-status" id="save-status">Local save ready</div>
+    </div>
+
+    <main>
+      <section class="tab-content active" id="tab-earnings" aria-label="Earnings">
+        <div class="hero">
+          <div class="hero-label">Available Leone balance</div>
+          <div class="hero-amount" id="cash-balance">Le 250,000</div>
+          <div class="hero-sub" id="click-rate">Le 5,000 per hustle</div>
+          <div class="hero-actions">
+            <button class="btn btn-ghost" type="button" data-action="open-rewards">▶ Earn a boost</button>
+            <span class="pill" id="boost-pill" hidden>6x hustle active</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="stat-box"><div class="stat-title">Passive income</div><div class="stat-value" id="hourly-income">Le 0/hr</div><div class="stat-detail">From your companies</div></div>
+          <div class="stat-box"><div class="stat-title">Today’s hustles</div><div class="stat-value" id="hustle-count">0</div><div class="stat-detail">Keep building your fortune</div></div>
+        </div>
+        <div class="tap-zone" id="tap-zone" role="button" tabindex="0" aria-label="Tap to hustle and earn Leone">
+          <div class="tap-content"><span class="tap-icon">👆🏾</span><div class="tap-copy">Tap here to hustle</div><div class="tap-hint">Every tap brings Freetown one step closer</div></div>
+        </div>
+        <div class="card">
+          <div class="section-head" style="margin:0 0 10px"><div><h3>Rewards that work for you</h3><p>Watch a short simulated ad to unlock a boost.</p></div></div>
+          <button class="btn btn-secondary btn-block" type="button" data-action="open-rewards">View available rewards</button>
+        </div>
+      </section>
+
+      <section class="tab-content" id="tab-business" aria-label="Businesses">
+        <div class="hero">
+          <div class="hero-label">Business income per hour</div>
+          <div class="hero-amount" id="business-hourly">Le 0</div>
+          <div class="hero-sub" id="business-multiplier-label">Your Salone companies are working around the clock.</div>
+          <div class="hero-actions">
+            <button class="btn btn-ghost" type="button" data-action="open-rewards">▶ Business rewards</button>
+            <span class="pill" id="revenue-boost-pill" hidden>Revenue boost active</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="stat-box"><div class="stat-title">Companies owned</div><div class="stat-value" id="business-count">0</div></div>
+          <div class="stat-box"><div class="stat-title">Managers hired</div><div class="stat-value" id="manager-count">0</div></div>
+        </div>
+        <div class="section-head"><div><h2>My Salone companies</h2><p>Grow local businesses, one upgrade at a time.</p></div></div>
+        <div class="list" id="business-list"></div>
+      </section>
+
+      <section class="tab-content" id="tab-investing" aria-label="Investing">
+        <div class="card">
+          <div class="section-head" style="margin:0 0 10px"><div><div class="eyebrow">INVESTMENT PORTFOLIO</div><h2 id="portfolio-value">Le 0</h2></div><span class="pill" id="portfolio-change">Market open</span></div>
+          <div class="chart-wrap"><canvas id="market-chart" aria-label="Portfolio performance chart"></canvas></div>
+        </div>
+        <div class="segmented" role="tablist" aria-label="Investment categories">
+          <button class="segment active" type="button" role="tab" aria-selected="true" data-investment="shares">Shares</button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-investment="realestate">Real Estate</button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-investment="crypto">Cryptocurrency</button>
+        </div>
+        <div class="list" id="investment-list"></div>
+      </section>
+
+      <section class="tab-content" id="tab-items" aria-label="Assets and taxes">
+        <div class="section-head"><div><h2>Government taxes</h2><p>Manage quarterly corporate obligations.</p></div></div>
+        <div class="card">
+          <div class="manager-line"><div><strong>Corporate tax reserve</strong><div class="small muted" id="tax-detail">Tax is calculated from passive revenue.</div></div><span class="pill" id="tax-status">Active</span></div>
+          <div style="margin-top:14px"><button class="btn btn-block" type="button" data-action="open-rewards" data-reward="tax">▶ Watch ad for 24h waiver</button></div>
+        </div>
+        <div class="section-head"><div><h2>Properties across Sierra Leone</h2><p>Landmarks, rentals, and long-term value.</p></div></div>
+        <div class="list" id="property-list"></div>
+      </section>
+
+      <section class="tab-content" id="tab-profile" aria-label="Profile">
+        <div class="hero">
+          <div class="hero-label">Your growing fortune</div>
+          <div class="hero-amount" id="profile-net-worth">Le 250,000</div>
+          <div class="hero-sub">A local empire, built one smart move at a time.</div>
+        </div>
+        <div class="segmented" role="tablist" aria-label="Profile sections">
+          <button class="segment active" type="button" role="tab" aria-selected="true" data-profile-section="overview">Overview</button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-profile-section="assets">Assets</button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-profile-section="settings">Settings</button>
+        </div>
+        <div id="profile-overview">
+          <div class="grid-2">
+            <div class="stat-box"><div class="stat-title">Cash</div><div class="stat-value" id="profile-cash">Le 0</div></div>
+            <div class="stat-box"><div class="stat-title">Businesses</div><div class="stat-value" id="profile-business">Le 0</div></div>
+            <div class="stat-box"><div class="stat-title">Stocks & crypto</div><div class="stat-value" id="profile-stocks">Le 0</div></div>
+            <div class="stat-box"><div class="stat-title">Real estate</div><div class="stat-value" id="profile-realestate">Le 0</div></div>
+          </div>
+          <div class="card">
+            <div class="section-head" style="margin:0 0 13px"><div><h3>Net worth breakdown</h3><p>How your fortune is diversified.</p></div></div>
+            <div class="progress-track" id="worth-progress" aria-label="Net worth by asset category"></div>
+            <div class="legend" id="worth-legend"></div>
+          </div>
+        </div>
+        <div id="profile-assets" hidden>
+          <div class="card"><div class="section-head" style="margin:0 0 12px"><div><h3>Empire overview</h3><p>Assets currently contributing to net worth.</p></div></div><div id="asset-summary" class="small muted"></div></div>
+        </div>
+        <div id="profile-settings" hidden>
+          <div class="card">
+            <div class="section-head" style="margin:0 0 12px"><div><h3>Cloud save & preferences</h3><p>Sync is a local demo and does not contact a real provider.</p></div></div>
+            <button class="btn btn-block" type="button" data-action="open-auth">Connect cloud account</button>
+            <div class="setting-line" style="margin-top:15px"><div><strong class="small">Dark appearance</strong><div class="small muted">Use a low-light color palette.</div></div><button class="toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle dark appearance"></button></div>
+            <div class="setting-line"><div><strong class="small">Save locally</strong><div class="small muted">Autosave runs every few seconds.</div></div><span class="pill">On</span></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <button class="nav-item" type="button" data-tab="investing" data-title="Investing"><span class="nav-icon">📈</span>Invest</button>
+      <button class="nav-item" type="button" data-tab="business" data-title="Business"><span class="nav-icon">🏢</span>Business</button>
+      <button class="nav-item active" type="button" data-tab="earnings" data-title="Earnings"><span class="nav-icon">💰</span>Earn</button>
+      <button class="nav-item" type="button" data-tab="items" data-title="Assets"><span class="nav-icon">🏠</span>Assets</button>
+      <button class="nav-item" type="button" data-tab="profile" data-title="Profile"><span class="nav-icon">👤</span>Profile</button>
+    </div>
+  </nav>
+
+  <div class="modal-backdrop" id="auth-modal" aria-hidden="true">
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <div class="modal-head"><h2 id="auth-title">Connect your cloud save</h2><button class="modal-close" type="button" data-close-modal aria-label="Close">×</button></div>
+      <p class="modal-copy">Choose a provider to simulate cloud sync. Your demo save is encrypted and stored in this browser.</p>
+      <div class="provider-list">
+        <button class="provider-button" type="button" data-provider="Google"><span class="provider-icon">🌐</span><span><strong>Continue with Google</strong><small>Google demo account</small></span></button>
+        <button class="provider-button" type="button" data-provider="Apple ID"><span class="provider-icon">🍎</span><span><strong>Continue with Apple ID</strong><small>Apple demo account</small></span></button>
+        <button class="provider-button" type="button" data-provider="Facebook"><span class="provider-icon">📘</span><span><strong>Continue with Facebook</strong><small>Facebook demo account</small></span></button>
+        <button class="provider-button" type="button" data-provider="Game Center"><span class="provider-icon">🎮</span><span><strong>Continue with Game Center</strong><small>Game Center demo account</small></span></button>
+      </div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px" type="button" data-close-modal>Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="reward-modal" aria-hidden="true">
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="reward-title">
+      <div class="modal-head"><h2 id="reward-title">Choose your reward</h2><button class="modal-close" type="button" data-close-modal aria-label="Close">×</button></div>
+      <p class="modal-copy">Select a boost, then complete a short simulated video to claim it.</p>
+      <div class="reward-list" id="reward-options">
+        <button class="reward-option" type="button" data-reward-choice="click"><span class="provider-icon">⚡</span><span class="reward-info"><strong>Hustle boost · 6×</strong><small>Manual earnings for 60 seconds</small></span><span>›</span></button>
+        <button class="reward-option" type="button" data-reward-choice="tax"><span class="provider-icon">🛡️</span><span class="reward-info"><strong>Corporate tax waiver</strong><small>No corporate taxes for 24 hours</small></span><span>›</span></button>
+        <button class="reward-option" type="button" data-reward-choice="revenue"><span class="provider-icon">📈</span><span class="reward-info"><strong>Daily revenue · +50%</strong><small>Passive business income for 4 hours · stacks</small></span><span>›</span></button>
+      </div>
+      <div class="reward-countdown" id="ad-countdown" hidden>Ad complete in 5 seconds…</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px" type="button" data-close-modal>Not now</button>
+    </div>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "salone-biznes-state-v3";
+    const MARKET_INTERVAL_MS = 4200;
+    const formatSLL = value => {
+      const amount = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+      if (amount >= 1e12) return `Le ${(amount / 1e12).toFixed(2)}T`;
+      if (amount >= 1e9) return `Le ${(amount / 1e9).toFixed(2)}B`;
+      if (amount >= 1e6) return `Le ${(amount / 1e6).toFixed(2)}M`;
+      if (amount >= 1e3) return `Le ${(amount / 1e3).toFixed(1)}K`;
+      return `Le ${Math.floor(amount).toLocaleString("en-SL")}`;
+    };
+    const formatFullSLL = value => `Le ${Math.floor(Math.max(0, Number(value) || 0)).toLocaleString("en-SL")}`;
+    const defaultState = () => ({
+      version: 3,
+      cash: 250000,
+      clickPower: 5000,
+      hustleCount: 0,
+      user: null,
+      providerId: null,
+      lastUpdate: Date.now(),
+      lastHustleDay: new Date().toISOString().slice(0, 10),
+      clickBoostUntil: 0,
+      taxWaiverUntil: 0,
+      revenueBoosts: [],
+      theme: "light",
+      businesses: [
+        { id: "poda-poda", name: "Poda-Poda Fleet", type: "Transport", icon: "🚌", level: 1, baseCost: 100000, cost: 125000, baseHourly: 15000, hourly: 15000, manager: false, incomeHistory: [9000, 10500, 11500, 12500, 14000, 15000] },
+        { id: "keke-network", name: "Keke Tricycle Network", type: "Transport", icon: "🛺", level: 0, baseCost: 260000, cost: 260000, baseHourly: 36000, hourly: 36000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] },
+        { id: "lumley-store", name: "Lumley Provision Store", type: "Retail", icon: "🛒", level: 0, baseCost: 750000, cost: 750000, baseHourly: 95000, hourly: 95000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] },
+        { id: "garment-wear", name: "Salone Garment & Wear", type: "Retail", icon: "🧵", level: 0, baseCost: 5000000, cost: 5000000, baseHourly: 720000, hourly: 720000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] },
+        { id: "supermarket-chain", name: "Freetown Supermarket Chain", type: "Enterprise", icon: "🏬", level: 0, baseCost: 22000000, cost: 22000000, baseHourly: 3300000, hourly: 3300000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] },
+        { id: "civil-works", name: "Civil Works & Construction", type: "Enterprise", icon: "🏗️", level: 0, baseCost: 85000000, cost: 85000000, baseHourly: 13500000, hourly: 13500000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] },
+        { id: "rokel-bank", name: "Rokel Commercial Bank", type: "Enterprise", icon: "🏦", level: 0, baseCost: 280000000, cost: 280000000, baseHourly: 46000000, hourly: 46000000, manager: false, incomeHistory: [0, 0, 0, 0, 0, 0] }
+      ],
+      stocks: [
+        { id: "rokel", name: "Rokel Commercial Bank", symbol: "RCB", price: 1250, shares: 100, change: 0, history: [1202, 1210, 1228, 1217, 1241, 1250] },
+        { id: "agro", name: "Salone Agro PLC", symbol: "SAP", price: 420, shares: 0, change: 0, history: [398, 407, 403, 412, 416, 420] },
+        { id: "bumbuna", name: "Bumbuna Power Grid", symbol: "BPG", price: 3400, shares: 0, change: 0, history: [3320, 3365, 3310, 3388, 3371, 3400] }
+      ],
+      properties: [
+        { id: "lumley-apartment", name: "Lumley Beach Apartment", icon: "🏖️", category: "Real Estate", cost: 2800000, value: 2800000, owned: 0, income: 18000 },
+        { id: "freetown-shop", name: "Freetown City Shop", icon: "🏪", category: "Real Estate", cost: 9500000, value: 9500000, owned: 0, income: 68000 },
+        { id: "peninsula-villa", name: "Peninsula View Villa", icon: "🏡", category: "Real Estate", cost: 42000000, value: 42000000, owned: 0, income: 380000 },
+        { id: "crypto-bitcoin", name: "Bitcoin", icon: "₿", category: "Cryptocurrency", cost: 4500000, value: 4500000, owned: 0, income: 0 },
+        { id: "crypto-ether", name: "Ethereum", icon: "◆", category: "Cryptocurrency", cost: 320000, value: 320000, owned: 0, income: 0 }
+      ]
+    });
+
+    class GameStateManager {
+      constructor() {
+        this.state = defaultState();
+        this.loadLocal();
+      }
+      loadLocal() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("salone_biznes_save_v2");
+          if (!saved) return;
+          const parsed = JSON.parse(saved);
+          if (!parsed || typeof parsed !== "object") throw new Error("The saved game has an invalid format.");
+          if (!parsed.version && Array.isArray(parsed.businesses)) {
+            const legacyIds = { podaPoda: "poda-poda", provision: "lumley-store", garment: "garment-wear", bank: "rokel-bank" };
+            parsed.businesses = parsed.businesses.map(item => ({ ...item, id: legacyIds[item.id] || item.id }));
+          }
+          this.state = this.mergeState(parsed);
+          this.applyOfflineProgress();
+        } catch (error) {
+          console.error("Unable to load the local game save:", error);
+          UIManager.toast("Your previous save could not be loaded. A fresh local game is ready.", "error");
+        }
+      }
+      mergeState(parsed) {
+        const fresh = defaultState();
+        const merged = { ...fresh, ...parsed };
+        for (const key of ["businesses", "stocks", "properties"]) {
+          const savedById = new Map(Array.isArray(parsed[key]) ? parsed[key].map(item => [item.id, item]) : []);
+          merged[key] = fresh[key].map(item => ({ ...item, ...(savedById.get(item.id) || {}) }));
+        }
+        merged.businesses.forEach(item => {
+          if (!Array.isArray(item.incomeHistory)) item.incomeHistory = Array(6).fill(item.hourly * item.level * (item.manager ? 1.25 : 1));
+        });
+        merged.cash = Math.max(0, Number(merged.cash) || 0);
+        merged.clickPower = Math.max(1, Number(merged.clickPower) || fresh.clickPower);
+        merged.revenueBoosts = Array.isArray(merged.revenueBoosts) ? merged.revenueBoosts.filter(Number.isFinite) : [];
+        merged.lastUpdate = Number(merged.lastUpdate || merged.lastTick) || Date.now();
+        if (!merged.providerId) merged.user = null;
+        merged.theme = merged.theme === "dark" ? "dark" : "light";
+        return merged;
+      }
+      applyOfflineProgress() {
+        const now = Date.now();
+        const start = this.state.lastUpdate;
+        if (now <= start) return;
+        const earnings = this.earningsBetween(start, now);
+        this.state.cash += earnings;
+        this.state.lastUpdate = now;
+        if (earnings > 0) UIManager.toast(`Welcome back! Your businesses earned ${formatSLL(earnings)} while you were away.`);
+      }
+      earningsBetween(start, end) {
+        const s = this.state;
+        const baseHourly = s.businesses.reduce((total, business) => total + business.hourly * business.level * (business.manager ? 1.25 : 1), 0)
+          + s.properties.reduce((total, property) => total + property.income * property.owned, 0);
+        const boundaries = [start, end, ...s.revenueBoosts, s.taxWaiverUntil].filter(time => time > start && time < end).sort((a, b) => a - b);
+        const points = [start, ...boundaries, end];
+        let earned = 0;
+        for (let index = 1; index < points.length; index += 1) {
+          const from = points[index - 1];
+          const to = points[index];
+          const midpoint = from + (to - from) / 2;
+          const multiplier = 1 + s.revenueBoosts.filter(expiry => expiry > midpoint).length * 0.5;
+          const taxFactor = s.taxWaiverUntil > midpoint ? 1 : 0.95;
+          earned += baseHourly * multiplier * taxFactor * ((to - from) / 3600000);
+        }
+        return earned;
+      }
+      economyIncomePerSecond() {
+        const state = this.state;
+        const baseHourly = state.businesses.reduce((total, business) => total + business.hourly * business.level * (business.manager ? 1.25 : 1), 0)
+          + state.properties.reduce((total, property) => total + property.income * property.owned, 0);
+        const multiplier = 1 + state.revenueBoosts.filter(expiry => expiry > Date.now()).length * 0.5;
+        const taxFactor = state.taxWaiverUntil > Date.now() ? 1 : 0.95;
+        return baseHourly * multiplier * taxFactor / 3600;
+      }
+      setState(next) { Object.assign(this.state, this.mergeState(next)); }
+      serialize() { return JSON.stringify({ ...this.state, lastUpdate: Date.now() }); }
+    }
+
+    class EconomyEngine {
+      constructor(game) { this.game = game; this.lastFrame = performance.now(); this.lastMarketUpdate = Date.now(); this.lastSave = Date.now(); this.lastUIUpdate = 0; this.running = false; }
+      start() {
+        if (this.running) return;
+        this.running = true;
+        requestAnimationFrame(this.frame);
+      }
+      frame = now => {
+        if (!this.running) return;
+        const delta = Math.max(0, (now - this.lastFrame) / 1000);
+        this.lastFrame = now;
+        this.tick(delta);
+        requestAnimationFrame(this.frame);
+      };
+      tick(delta) {
+        if (this.game.state.revenueBoosts.some(expiry => expiry <= Date.now())) {
+          this.game.state.revenueBoosts = this.game.state.revenueBoosts.filter(expiry => expiry > Date.now());
+        }
+        if (delta > 0) {
+          this.game.state.cash += this.game.stateManager.economyIncomePerSecond() * delta;
+          this.game.state.lastUpdate = Date.now();
+        }
+        const now = Date.now();
+        if (now - this.lastMarketUpdate >= MARKET_INTERVAL_MS) {
+          this.updateMarket();
+          this.lastMarketUpdate = now;
+        }
+        if (now - this.lastUIUpdate >= 200) {
+          this.game.ui.update();
+          this.lastUIUpdate = now;
+        }
+        if (now - this.lastSave >= 10000) {
+          this.game.save();
+          this.lastSave = now;
+        }
+      }
+      settleElapsed() {
+        const now = Date.now();
+        if (now > this.game.state.lastUpdate) {
+          this.game.state.cash += this.game.stateManager.earningsBetween(this.game.state.lastUpdate, now);
+        }
+        this.game.state.lastUpdate = now;
+        this.lastFrame = performance.now();
+      }
+      updateMarket() {
+        for (const stock of this.game.state.stocks) {
+          const oldPrice = stock.price;
+          const drift = (Math.random() - 0.48) * 0.035;
+          stock.price = Math.max(1, Math.round(stock.price * (1 + drift)));
+          stock.change = ((stock.price - oldPrice) / oldPrice) * 100;
+          stock.history.push(stock.price);
+          if (stock.history.length > 28) stock.history.shift();
+        }
+        for (const asset of this.game.state.properties.filter(item => item.category === "Cryptocurrency")) {
+          const drift = (Math.random() - 0.49) * 0.055;
+          asset.value = Math.max(1, Math.round(asset.value * (1 + drift)));
+        }
+      }
+      getHourlyIncome() {
+        const businesses = this.game.state.businesses.reduce((sum, business) => sum + business.hourly * business.level * (business.manager ? 1.25 : 1), 0);
+        const propertyIncome = this.game.state.properties.reduce((sum, property) => sum + property.income * property.owned, 0);
+        const multiplier = 1 + this.game.state.revenueBoosts.filter(expiry => expiry > Date.now()).length * 0.5;
+        const taxFactor = this.game.state.taxWaiverUntil > Date.now() ? 1 : 0.95;
+        return (businesses + propertyIncome) * multiplier * taxFactor;
+      }
+      netWorthBreakdown() {
+        const s = this.game.state;
+        const businesses = s.businesses.reduce((sum, business) => sum + business.level * business.cost * 0.6, 0);
+        const stocks = s.stocks.reduce((sum, stock) => sum + stock.price * stock.shares, 0);
+        const property = s.properties.reduce((sum, asset) => sum + asset.value * asset.owned, 0);
+        const crypto = s.properties.filter(asset => asset.category === "Cryptocurrency").reduce((sum, asset) => sum + asset.value * asset.owned, 0);
+        return { cash: s.cash, businesses, stocks: stocks + crypto, realestate: property - crypto };
+      }
+      netWorth() { return Object.values(this.netWorthBreakdown()).reduce((sum, value) => sum + value, 0); }
+    }
+
+    class AuthManager {
+      constructor(game) { this.game = game; }
+      storageKey(providerId) { return `salone-cloud-${providerId}`; }
+      keyStorageKey(providerId) { return `salone-cloud-key-${providerId}`; }
+      async getEncryptionKey(providerId) {
+        if (!globalThis.crypto || !crypto.subtle) throw new Error("Secure browser encryption is unavailable. Use a modern browser to enable cloud sync.");
+        const savedKey = localStorage.getItem(this.keyStorageKey(providerId));
+        if (savedKey) {
+          const raw = Uint8Array.from(atob(savedKey), char => char.charCodeAt(0));
+          return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+        }
+        const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+        const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+        localStorage.setItem(this.keyStorageKey(providerId), btoa(String.fromCharCode(...raw)));
+        return key;
+      }
+      async encrypt(text, providerId) {
+        const key = await this.getEncryptionKey(providerId);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(text));
+        const bytes = new Uint8Array(cipher);
+        const packed = new Uint8Array(iv.length + bytes.length);
+        packed.set(iv);
+        packed.set(bytes, iv.length);
+        return btoa(String.fromCharCode(...packed));
+      }
+      async decrypt(payload, providerId) {
+        const key = await this.getEncryptionKey(providerId);
+        const packed = Uint8Array.from(atob(payload), char => char.charCodeAt(0));
+        const iv = packed.slice(0, 12);
+        const cipher = packed.slice(12);
+        const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+        return new TextDecoder().decode(plain);
+      }
+      async login(provider) {
+        const providerId = `${provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-demo-user`;
+        const previousUser = this.game.state.user;
+        const previousProviderId = this.game.state.providerId;
+        try {
+          const encrypted = localStorage.getItem(this.storageKey(providerId));
+          if (encrypted) {
+            const cloudState = JSON.parse(await this.decrypt(encrypted, providerId));
+            this.game.stateManager.setState(cloudState);
+            this.game.state.user = `${provider} User`;
+            this.game.state.providerId = providerId;
+            this.game.stateManager.applyOfflineProgress();
+            UIManager.toast(`Cloud save restored from ${provider}.`);
+          } else {
+            this.game.state.user = `${provider} User`;
+            this.game.state.providerId = providerId;
+            await this.sync();
+            UIManager.toast(`Connected to ${provider} demo cloud.`);
+          }
+          this.game.ui.closeModal("auth-modal");
+          this.game.ui.update();
+          await this.game.save();
+        } catch (error) {
+          this.game.state.user = previousUser;
+          this.game.state.providerId = previousProviderId;
+          this.game.ui.update();
+          console.error("Cloud sign-in failed:", error);
+          UIManager.toast(error.message || "Cloud sign-in failed. Your local save is still available.", "error");
+        }
+      }
+      async sync() {
+        const providerId = this.game.state.providerId;
+        if (!providerId) return;
+        const encrypted = await this.encrypt(this.game.stateManager.serialize(), providerId);
+        localStorage.setItem(this.storageKey(providerId), encrypted);
+      }
+    }
+
+    class AdRewardSystem {
+      constructor(game) { this.game = game; this.countdownTimer = null; this.selectedReward = null; }
+      start(reward) {
+        if (this.countdownTimer) clearInterval(this.countdownTimer);
+        this.selectedReward = reward;
+        this.game.ui.closeModal("reward-modal");
+        const countdown = document.getElementById("ad-countdown");
+        const options = document.getElementById("reward-options");
+        countdown.hidden = false;
+        options.hidden = true;
+        let remaining = 5;
+        countdown.textContent = `Ad complete in ${remaining} seconds…`;
+        this.game.ui.openModal("reward-modal");
+        this.countdownTimer = setInterval(() => {
+          remaining -= 1;
+          if (remaining > 0) {
+            countdown.textContent = `Ad complete in ${remaining} second${remaining === 1 ? "" : "s"}…`;
+            return;
+          }
+          clearInterval(this.countdownTimer);
+          this.countdownTimer = null;
+          countdown.hidden = true;
+          options.hidden = false;
+          this.grant(reward);
+        }, 1000);
+      }
+      grant(reward) {
+        const now = Date.now();
+        if (reward === "click") {
+          this.game.state.clickBoostUntil = Math.max(now, this.game.state.clickBoostUntil) + 60000;
+          UIManager.toast("Hustle boost activated: manual earnings are 6× for 60 seconds.");
+        } else if (reward === "tax") {
+          this.game.state.taxWaiverUntil = Math.max(now, this.game.state.taxWaiverUntil) + 86400000;
+          UIManager.toast("Corporate taxes waived for 24 hours.");
+        } else if (reward === "revenue") {
+          this.game.state.revenueBoosts = this.game.state.revenueBoosts.filter(expiry => expiry > now);
+          this.game.state.revenueBoosts.push(now + 4 * 60 * 60 * 1000);
+          UIManager.toast("Daily revenue boost added: +50% for 4 hours.");
+        }
+        this.game.ui.update();
+        this.game.save();
+      }
+      clear() {
+        if (this.countdownTimer) clearInterval(this.countdownTimer);
+        this.countdownTimer = null;
+      }
+    }
+
+    class UIManager {
+      constructor(game) {
+        this.game = game;
+        this.activeTab = "earnings";
+        this.investmentCategory = "shares";
+        this.profileSection = "overview";
+        this.lastNetWorth = 250000;
+        this.displayedNetWorth = 250000;
+        this.previousWorth = null;
+        this.marketChartKey = "";
+        this.businessRenderKey = "";
+        this.investmentRenderKey = "";
+        this.propertyRenderKey = "";
+        this.bindEvents();
+        this.applyTheme();
+      }
+      static toast(message, type = "") {
+        const region = document.getElementById("toast-region");
+        if (!region) return;
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`.trim();
+        toast.textContent = message;
+        region.append(toast);
+        setTimeout(() => toast.remove(), 3400);
+      }
+      bindEvents() {
+        document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => this.switchTab(button.dataset.tab, button.dataset.title)));
+        document.querySelectorAll("[data-action='open-auth'], #profile-badge").forEach(button => button.addEventListener("click", () => this.openModal("auth-modal")));
+        document.querySelectorAll("[data-action='open-rewards']").forEach(button => button.addEventListener("click", () => this.openRewards(button.dataset.reward)));
+        document.querySelectorAll("[data-close-modal]").forEach(button => button.addEventListener("click", () => this.closeModal(button.closest(".modal-backdrop").id)));
+        document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => {
+          if (event.target === backdrop) this.closeModal(backdrop.id);
+        }));
+        document.querySelectorAll("[data-provider]").forEach(button => button.addEventListener("click", () => this.game.auth.login(button.dataset.provider)));
+        document.querySelectorAll("[data-reward-choice]").forEach(button => button.addEventListener("click", () => this.game.ads.start(button.dataset.rewardChoice)));
+        document.querySelectorAll("[data-investment]").forEach(button => button.addEventListener("click", () => this.setInvestmentCategory(button.dataset.investment)));
+        document.querySelectorAll("[data-profile-section]").forEach(button => button.addEventListener("click", () => this.setProfileSection(button.dataset.profileSection)));
+        const tapZone = document.getElementById("tap-zone");
+        tapZone.addEventListener("click", event => this.game.manualHustle(event));
+        tapZone.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); this.game.manualHustle(event); }
+        });
+        document.getElementById("theme-toggle").addEventListener("click", () => {
+          this.game.state.theme = this.game.state.theme === "dark" ? "light" : "dark";
+          this.applyTheme();
+          this.game.save();
+        });
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            this.game.economy.settleElapsed();
+            this.update();
+          } else this.game.save();
+        });
+        window.addEventListener("pagehide", () => this.game.save());
+        window.addEventListener("resize", () => this.drawMarketChart());
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") document.querySelectorAll(".modal-backdrop.open").forEach(modal => this.closeModal(modal.id));
+        });
+      }
+      switchTab(tab, title) {
+        this.activeTab = tab;
+        document.querySelectorAll(".tab-content").forEach(section => section.classList.toggle("active", section.id === `tab-${tab}`));
+        document.querySelectorAll(".nav-item").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
+        document.getElementById("screen-title").textContent = title;
+        document.querySelector("main").scrollTo({ top: 0, behavior: "smooth" });
+        this.update();
+        this.drawMarketChart();
+      }
+      openModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+      closeModal(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        if (id === "reward-modal" && this.game.ads.countdownTimer) {
+          this.game.ads.clear();
+          document.getElementById("ad-countdown").hidden = true;
+          document.getElementById("reward-options").hidden = false;
+        }
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+      }
+      openRewards(suggested) {
+        const options = document.getElementById("reward-options");
+        const countdown = document.getElementById("ad-countdown");
+        options.hidden = false;
+        countdown.hidden = true;
+        this.openModal("reward-modal");
+        if (suggested) {
+          const option = document.querySelector(`[data-reward-choice="${suggested}"]`);
+          if (option) option.focus();
+        }
+      }
+      setInvestmentCategory(category) {
+        this.investmentCategory = category;
+        document.querySelectorAll("[data-investment]").forEach(button => {
+          const selected = button.dataset.investment === category;
+          button.classList.toggle("active", selected);
+          button.setAttribute("aria-selected", String(selected));
+        });
+        this.renderInvestments();
+      }
+      setProfileSection(section) {
+        this.profileSection = section;
+        document.querySelectorAll("[data-profile-section]").forEach(button => {
+          const selected = button.dataset.profileSection === section;
+          button.classList.toggle("active", selected);
+          button.setAttribute("aria-selected", String(selected));
+        });
+        ["overview", "assets", "settings"].forEach(name => { document.getElementById(`profile-${name}`).hidden = name !== section; });
+      }
+      applyTheme() {
+        document.documentElement.dataset.theme = this.game.state.theme;
+        const toggle = document.getElementById("theme-toggle");
+        if (toggle) {
+          const isDark = this.game.state.theme === "dark";
+          toggle.classList.toggle("on", isDark);
+          toggle.setAttribute("aria-checked", String(isDark));
+        }
+      }
+      update() {
+        const s = this.game.state;
+        const netWorth = this.game.economy.netWorth();
+        const breakdown = this.game.economy.netWorthBreakdown();
+        this.displayedNetWorth += (netWorth - this.displayedNetWorth) * 0.18;
+        if (Math.abs(netWorth - this.displayedNetWorth) < 1) this.displayedNetWorth = netWorth;
+        document.getElementById("sticky-net-worth").textContent = formatSLL(this.displayedNetWorth);
+        document.getElementById("profile-net-worth").textContent = formatSLL(netWorth);
+        document.getElementById("cash-balance").textContent = formatSLL(s.cash);
+        document.getElementById("click-rate").textContent = `${formatSLL(s.clickPower * (s.clickBoostUntil > Date.now() ? 6 : 1))} per hustle`;
+        const hourly = this.game.economy.getHourlyIncome();
+        document.getElementById("hourly-income").textContent = `${formatSLL(hourly)}/hr`;
+        document.getElementById("business-hourly").textContent = formatSLL(hourly);
+        document.getElementById("hustle-count").textContent = s.hustleCount.toLocaleString();
+        const ownedBusinesses = s.businesses.filter(item => item.level > 0);
+        document.getElementById("business-count").textContent = ownedBusinesses.length;
+        document.getElementById("manager-count").textContent = s.businesses.filter(item => item.manager).length;
+        const boostCount = s.revenueBoosts.filter(expiry => expiry > Date.now()).length;
+        document.getElementById("revenue-boost-pill").hidden = boostCount === 0;
+        document.getElementById("revenue-boost-pill").textContent = boostCount ? `+${boostCount * 50}% revenue` : "";
+        document.getElementById("boost-pill").hidden = s.clickBoostUntil <= Date.now();
+        document.getElementById("business-multiplier-label").textContent = boostCount ? `Revenue rewards active: +${boostCount * 50}% passive income.` : "Your Salone companies are working around the clock.";
+        document.getElementById("tax-status").textContent = s.taxWaiverUntil > Date.now() ? `Waived ${this.timeRemaining(s.taxWaiverUntil)}` : "5% reserve";
+        document.getElementById("tax-detail").textContent = s.taxWaiverUntil > Date.now() ? `Tax waiver ends in ${this.timeRemaining(s.taxWaiverUntil)}.` : "5% of passive revenue goes to the corporate tax reserve.";
+        document.getElementById("profile-cash").textContent = formatSLL(breakdown.cash);
+        document.getElementById("profile-business").textContent = formatSLL(breakdown.businesses);
+        document.getElementById("profile-stocks").textContent = formatSLL(breakdown.stocks);
+        document.getElementById("profile-realestate").textContent = formatSLL(breakdown.realestate);
+        document.getElementById("profile-label").textContent = s.user ? `👤 Connected as ${s.user}` : "👤 Local save";
+        document.getElementById("connection-dot").classList.toggle("connected", Boolean(s.user));
+        this.renderBusinesses();
+        this.renderInvestments();
+        this.renderProperties();
+        this.renderBreakdown(breakdown);
+        this.renderAssetSummary();
+        const chartKey = this.game.state.stocks.map(stock => `${stock.price}:${stock.history.length}`).join("|");
+        if (chartKey !== this.marketChartKey) {
+          this.marketChartKey = chartKey;
+          this.drawMarketChart();
+        }
+      }
+      timeRemaining(until) {
+        const totalSeconds = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        return hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+      }
+      renderBusinesses() {
+        const renderKey = this.game.state.businesses.map(item => `${item.id}:${item.level}:${item.cost}:${item.manager}:${item.incomeHistory.length}:${this.game.state.cash >= item.cost}:${this.game.state.cash >= Math.max(25000, item.cost * .5)}`).join("|");
+        if (renderKey === this.businessRenderKey) return;
+        this.businessRenderKey = renderKey;
+        const container = document.getElementById("business-list");
+        container.replaceChildren();
+        for (const business of this.game.state.businesses) {
+          const card = document.createElement("article");
+          card.className = "card asset-row";
+          const details = document.createElement("div");
+          details.className = "asset-main";
+          details.innerHTML = `<div class="asset-icon">${business.icon}</div><div class="asset-info"><h3 class="asset-name"></h3><div class="asset-meta"></div><div class="asset-income"></div><canvas class="sparkline income-sparkline" aria-label="Business income trend"></canvas></div>`;
+          details.querySelector(".asset-name").textContent = business.name;
+          details.querySelector(".asset-meta").textContent = `${business.type} · Level ${business.level}${business.manager ? " · Manager hired" : ""}`;
+          details.querySelector(".asset-income").textContent = `+${formatSLL(business.hourly * business.level * (business.manager ? 1.25 : 1))}/hr`;
+          this.drawSparkline(details.querySelector(".income-sparkline"), business.incomeHistory, true);
+          const actions = document.createElement("div");
+          actions.className = "asset-side";
+          const button = document.createElement("button");
+          button.className = "btn btn-small";
+          button.type = "button";
+          button.textContent = business.level ? `Upgrade ${formatSLL(business.cost)}` : `Start ${formatSLL(business.cost)}`;
+          button.disabled = this.game.state.cash < business.cost;
+          button.addEventListener("click", () => this.game.upgradeBusiness(business.id));
+          actions.append(button);
+          if (business.level > 0) {
+            const manager = document.createElement("button");
+            manager.className = "btn btn-secondary btn-small";
+            manager.type = "button";
+            manager.textContent = business.manager ? "Manager hired" : `Hire ${formatSLL(Math.max(25000, business.cost * .5))}`;
+            manager.disabled = business.manager || this.game.state.cash < Math.max(25000, business.cost * .5);
+            manager.addEventListener("click", () => this.game.hireManager(business.id));
+            actions.append(manager);
+          }
+          card.append(details, actions);
+          container.append(card);
+        }
+      }
+      renderInvestments() {
+        const renderKey = `${this.investmentCategory}:${this.game.state.stocks.map(item => `${item.price}:${item.shares}:${item.change}:${item.history.length}:${this.game.state.cash >= item.price * 10}`).join("|")}|${this.game.state.properties.map(item => `${item.value}:${item.owned}:${this.game.state.cash >= item.cost}`).join("|")}`;
+        if (renderKey === this.investmentRenderKey) return;
+        this.investmentRenderKey = renderKey;
+        const container = document.getElementById("investment-list");
+        container.replaceChildren();
+        if (this.investmentCategory === "shares") {
+          const total = this.game.state.stocks.reduce((sum, stock) => sum + stock.price * stock.shares, 0);
+          document.getElementById("portfolio-value").textContent = formatSLL(total);
+          const marketChange = this.game.state.stocks.reduce((sum, stock) => sum + stock.change, 0) / Math.max(1, this.game.state.stocks.length);
+          const changeEl = document.getElementById("portfolio-change");
+          changeEl.textContent = `${marketChange >= 0 ? "+" : ""}${marketChange.toFixed(2)}% this tick`;
+          changeEl.style.color = marketChange >= 0 ? "var(--primary)" : "var(--red)";
+          for (const [index, stock] of this.game.state.stocks.entries()) {
+            const card = this.assetCard({ icon: "📊", name: stock.name, meta: `${stock.symbol} · ${stock.shares.toLocaleString()} shares owned`, price: formatFullSLL(stock.price), change: stock.change, action: `Buy 10 · ${formatSLL(stock.price * 10)}`, disabled: this.game.state.cash < stock.price * 10, onAction: () => this.game.buyStock(index), history: stock.history });
+            container.append(card);
+          }
+        } else {
+          document.getElementById("portfolio-value").textContent = this.investmentCategory === "realestate" ? "Property portfolio" : "Digital assets";
+          document.getElementById("portfolio-change").textContent = "Live market";
+          const category = this.investmentCategory === "realestate" ? "Real Estate" : "Cryptocurrency";
+          const assets = this.game.state.properties.filter(item => item.category === category);
+          assets.forEach(asset => container.append(this.assetCard({
+            icon: asset.icon, name: asset.name, meta: `${asset.owned} owned · ${formatSLL(asset.income)}/hr each`,
+            price: formatSLL(asset.value), action: `Buy ${formatSLL(asset.cost)}`, disabled: this.game.state.cash < asset.cost,
+            onAction: () => this.game.buyProperty(asset.id)
+          })));
+        }
+      }
+      assetCard(data) {
+        const card = document.createElement("article");
+        card.className = "card asset-row";
+        const left = document.createElement("div");
+        left.className = "asset-main";
+        left.innerHTML = `<div class="asset-icon">${data.icon}</div><div class="asset-info"><h3 class="asset-name"></h3><div class="asset-meta"></div><div class="asset-price"></div></div>`;
+        left.querySelector(".asset-name").textContent = data.name;
+        left.querySelector(".asset-meta").textContent = data.meta;
+        left.querySelector(".asset-price").textContent = data.price;
+        const side = document.createElement("div");
+        side.className = "asset-side";
+        if (data.history) {
+          const spark = document.createElement("canvas");
+          spark.className = "sparkline";
+          spark.setAttribute("aria-label", "Recent stock price movement");
+          side.append(spark);
+          this.drawSparkline(spark, data.history, data.change >= 0);
+          const change = document.createElement("span");
+          change.className = data.change >= 0 ? "change-up" : "change-down";
+          change.textContent = `${data.change >= 0 ? "+" : ""}${data.change.toFixed(2)}%`;
+          side.append(change);
+        }
+        const button = document.createElement("button");
+        button.className = "btn btn-small";
+        button.type = "button";
+        button.textContent = data.action;
+        button.disabled = data.disabled;
+        button.addEventListener("click", data.onAction);
+        side.append(button);
+        card.append(left, side);
+        return card;
+      }
+      renderProperties() {
+        const renderKey = this.game.state.properties.filter(item => item.category === "Real Estate").map(item => `${item.id}:${item.owned}:${item.value}:${this.game.state.cash >= item.cost}`).join("|");
+        if (renderKey === this.propertyRenderKey) return;
+        this.propertyRenderKey = renderKey;
+        const container = document.getElementById("property-list");
+        container.replaceChildren();
+        for (const property of this.game.state.properties.filter(item => item.category === "Real Estate")) {
+          container.append(this.assetCard({
+            icon: property.icon, name: property.name, meta: `${property.owned} owned · ${formatSLL(property.income)}/hr rental income`,
+            price: formatSLL(property.value * Math.max(1, property.owned)), action: `Buy ${formatSLL(property.cost)}`,
+            disabled: this.game.state.cash < property.cost, onAction: () => this.game.buyProperty(property.id)
+          }));
+        }
+      }
+      renderBreakdown(breakdown) {
+        const colors = { cash: "#52b788", businesses: "#4f8ac9", stocks: "#f2b84b", realestate: "#a982d6" };
+        const labels = { cash: "Cash", businesses: "Businesses", stocks: "Stocks & crypto", realestate: "Real estate" };
+        const total = Math.max(1, Object.values(breakdown).reduce((sum, value) => sum + value, 0));
+        const progress = document.getElementById("worth-progress");
+        const legend = document.getElementById("worth-legend");
+        progress.replaceChildren();
+        legend.replaceChildren();
+        Object.entries(breakdown).forEach(([key, value]) => {
+          const percent = Math.max(0, value / total * 100);
+          const segment = document.createElement("div");
+          segment.className = "progress-segment";
+          segment.style.width = `${percent}%`;
+          segment.style.background = colors[key];
+          progress.append(segment);
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.innerHTML = `<span class="legend-dot"></span><span></span><strong style="margin-left:auto;color:var(--text)"></strong>`;
+          item.querySelector(".legend-dot").style.background = colors[key];
+          item.children[1].textContent = labels[key];
+          item.querySelector("strong").textContent = formatSLL(value);
+          legend.append(item);
+        });
+      }
+      renderAssetSummary() {
+        const s = this.game.state;
+        const ownedCompanies = s.businesses.filter(item => item.level > 0).length;
+        const shares = s.stocks.reduce((sum, stock) => sum + stock.shares, 0);
+        const properties = s.properties.reduce((sum, asset) => sum + asset.owned, 0);
+        document.getElementById("asset-summary").textContent = `${ownedCompanies} companies · ${shares.toLocaleString()} stock shares · ${properties} properties and crypto assets. You earn ${formatSLL(this.game.economy.getHourlyIncome())} every hour from your portfolio.`;
+      }
+      floatNumber(event, amount) {
+        const zone = document.getElementById("tap-zone");
+        const bounds = zone.getBoundingClientRect();
+        const floating = document.createElement("span");
+        floating.className = "float-number";
+        floating.textContent = `+${formatSLL(amount)}`;
+        floating.style.left = `${Math.min(bounds.width - 50, Math.max(50, (event.clientX || bounds.left + bounds.width / 2) - bounds.left))}px`;
+        floating.style.top = `${Math.max(50, (event.clientY || bounds.top + bounds.height / 2) - bounds.top)}px`;
+        zone.append(floating);
+        setTimeout(() => floating.remove(), 1000);
+      }
+      drawSparkline(canvas, values, positive) {
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(90, rect.width);
+        const height = Math.max(26, rect.height);
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        const context = canvas.getContext("2d");
+        context.scale(ratio, ratio);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = Math.max(1, max - min);
+        context.beginPath();
+        values.forEach((value, index) => {
+          const x = index * width / Math.max(1, values.length - 1);
+          const y = height - 3 - ((value - min) / range) * (height - 7);
+          if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
+        });
+        context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue(positive ? "--primary" : "--red").trim();
+        context.lineWidth = 2;
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.stroke();
+      }
+      drawMarketChart() {
+        const canvas = document.getElementById("market-chart");
+        if (!canvas || !canvas.offsetParent) return;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = rect.width * ratio;
+        canvas.height = rect.height * ratio;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(ratio, ratio);
+        const width = rect.width;
+        const height = rect.height;
+        const histories = this.game.state.stocks.map(stock => stock.history);
+        const pointCount = Math.min(...histories.map(history => history.length));
+        if (pointCount < 2) return;
+        const values = Array.from({ length: pointCount }, (_, index) =>
+          histories.reduce((total, history) => total + history[history.length - pointCount + index] / history[history.length - pointCount], 0) / histories.length
+        );
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = Math.max(1, max - min);
+        const color = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--line").trim();
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 3; i++) {
+          const y = height * i / 4;
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+        ctx.beginPath();
+        values.forEach((value, index) => {
+          const x = index * width / Math.max(1, values.length - 1);
+          const y = height - 8 - ((value - min) / range) * (height - 16);
+          if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.stroke();
+      }
+    }
+
+    class Game {
+      constructor() {
+        this.stateManager = new GameStateManager();
+        this.state = this.stateManager.state;
+        this.auth = new AuthManager(this);
+        this.ads = new AdRewardSystem(this);
+        this.economy = new EconomyEngine(this);
+        this.ui = new UIManager(this);
+        this.ui.update();
+        this.economy.start();
+        this.save();
+      }
+      manualHustle(event) {
+        const multiplier = this.state.clickBoostUntil > Date.now() ? 6 : 1;
+        const gained = this.state.clickPower * multiplier;
+        this.state.cash += gained;
+        const day = new Date().toISOString().slice(0, 10);
+        if (this.state.lastHustleDay !== day) {
+          this.state.lastHustleDay = day;
+          this.state.hustleCount = 0;
+        }
+        this.state.hustleCount += 1;
+        this.ui.floatNumber(event, gained);
+        this.ui.update();
+      }
+      upgradeBusiness(id) {
+        const business = this.state.businesses.find(item => item.id === id);
+        if (!business || this.state.cash < business.cost) return;
+        this.state.cash -= business.cost;
+        business.level += 1;
+        business.cost = Math.ceil(business.baseCost * Math.pow(1.25, business.level));
+        business.hourly = Math.ceil(business.baseHourly * Math.pow(1.35, business.level - 1));
+        this.ui.update();
+        this.save();
+        UIManager.toast(`${business.name} upgraded to level ${business.level}.`);
+      }
+      hireManager(id) {
+        const business = this.state.businesses.find(item => item.id === id);
+        if (!business || business.manager || business.level < 1) return;
+        const cost = Math.max(25000, business.cost * .5);
+        if (this.state.cash < cost) return;
+        this.state.cash -= cost;
+        business.manager = true;
+        this.ui.update();
+        this.save();
+        UIManager.toast(`Manager hired for ${business.name}. Income increased by 25%.`);
+      }
+      buyStock(index) {
+        const stock = this.state.stocks[index];
+        const shares = 10;
+        const cost = stock.price * shares;
+        if (!stock || this.state.cash < cost) return;
+        this.state.cash -= cost;
+        stock.shares += shares;
+        this.ui.update();
+        this.save();
+        UIManager.toast(`${shares} shares added to your portfolio.`);
+      }
+      buyProperty(id) {
+        const asset = this.state.properties.find(item => item.id === id);
+        if (!asset || this.state.cash < asset.cost) return;
+        this.state.cash -= asset.cost;
+        asset.owned += 1;
+        this.ui.update();
+        this.save();
+        UIManager.toast(`${asset.name} added to your assets.`);
+      }
+      async save() {
+        const status = document.getElementById("save-status");
+        status.textContent = "Saving...";
+        status.className = "save-status saving";
+        this.state.lastUpdate = Date.now();
+        try {
+          localStorage.setItem(STORAGE_KEY, this.stateManager.serialize());
+          await this.auth.sync();
+          status.textContent = this.state.providerId ? "Cloud Synced" : "Local save ready";
+          status.className = "save-status synced";
+        } catch (error) {
+          console.error("Unable to save game state:", error);
+          status.textContent = "Save error";
+          status.className = "save-status";
+          UIManager.toast("Save failed. Check browser storage permissions and available space.", "error");
+        }
+      }
+    }
+
+    const game = new Game();
+  </script>
+</body>
+</html>
